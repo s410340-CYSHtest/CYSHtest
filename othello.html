@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>黑白棋 (Othello/Reversi) - 智慧對戰</title>
+    <title>黑白棋 - 專業智慧對戰</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -91,19 +91,23 @@
                     </div>
                 </div>
 
-                <!-- 2. 選擇 AI 強度 -->
+                <!-- 2. 滑桿式 AI 強度與計算深度設定 -->
                 <div>
-                    <label class="block text-sm font-semibold text-center mb-3">步驟二：選擇電腦強度</label>
-                    <div class="grid grid-cols-4 gap-2" id="difficulty-group">
-                        <button data-depth="2" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">簡單</button>
-                        <button data-depth="4" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 font-semibold">中等</button>
-                        <button data-depth="6" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">困難</button>
-                        <button data-depth="8" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">大師</button>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">步驟二：設定電腦強度 (計算深度)</label>
+                        <span id="ai-depth-badge" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">深度 4 (業餘)</span>
+                    </div>
+                    <input type="range" id="ai-depth-slider" min="1" max="10" value="4" class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1">
+                        <span>Lv.1 入門</span>
+                        <span>Lv.4 業餘</span>
+                        <span>Lv.7 專家</span>
+                        <span>Lv.10 宗師級</span>
                     </div>
                 </div>
 
-                <!-- 3. 最長思考時間設定 (如果深度 >= 5 就強制或建議設定) -->
-                <div id="time-limit-container" class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 transition-all">
+                <!-- 3. 最長思考時間設定 -->
+                <div id="time-limit-container" class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 transition-all opacity-60">
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-xs font-semibold flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
                             <i data-lucide="timer" class="w-4 h-4 text-emerald-500"></i>
@@ -111,9 +115,9 @@
                         </label>
                         <span id="time-limit-value" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">3 秒</span>
                     </div>
-                    <input type="range" id="time-limit-slider" min="1" max="15" value="3" class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    <input type="range" id="time-limit-slider" min="1" max="15" value="3" class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" disabled>
                     <p class="text-[10px] text-gray-400 mt-2">
-                        💡 備註：使用漸進加深搜尋。在達到深度上限前，若計算超過此秒數，AI 會立刻終止運算並採用目前得出的最佳棋步，避免網頁停頓。
+                        💡 備註：在深度 $\ge 5$ 時，若計算超過此秒數，AI 會立刻終止運算並採用目前得出的最佳棋步，避免網頁停頓。
                     </p>
                 </div>
 
@@ -181,17 +185,43 @@
 
             </div>
 
+            <!-- AI 計算即時面板 -->
+            <div id="ai-stats-panel" class="w-full mt-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/80 rounded-xl p-3 shadow-md">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-2 border-b border-gray-100 dark:border-gray-700 pb-1.5">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span>AI 決策分析數據</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-900/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <div class="text-[9px] text-gray-400 font-medium">思考耗時</div>
+                        <div id="stat-time" class="text-xs font-bold font-mono text-gray-700 dark:text-gray-200">-</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <div class="text-[9px] text-gray-400 font-medium">預估勝率</div>
+                        <div id="stat-winrate" class="text-xs font-bold font-mono text-gray-700 dark:text-gray-200">-</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <div class="text-[9px] text-gray-400 font-medium">計算深度</div>
+                        <div id="stat-depth" class="text-xs font-bold font-mono text-gray-700 dark:text-gray-200">-</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <div class="text-[9px] text-gray-400 font-medium">計算盤面數</div>
+                        <div id="stat-nodes" class="text-xs font-bold font-mono text-gray-700 dark:text-gray-200">-</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 功能控制按鈕 -->
-            <div class="w-full mt-5 flex gap-3">
+            <div class="w-full mt-4 flex gap-3">
                 <!-- 重新開始 (具防誤觸確認，並返回顏色選擇) -->
-                <button id="reset-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 relative overflow-hidden">
-                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                <button id="reset-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 relative overflow-hidden text-sm">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     <span id="reset-btn-text">重新開始</span>
                 </button>
                 
                 <!-- 切換陣營 / 放棄此局 -->
-                <button id="switch-camp-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl transition flex items-center justify-center gap-2">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                <button id="switch-camp-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
                     <span>回首頁選單</span>
                 </button>
             </div>
@@ -277,6 +307,9 @@
         let lastMove = null;       // 儲存最後一次落子位置 {r, c, player}
         let aiTimeoutId = null;    // 用於追蹤 AI 思考的計時器，防範選單 Bug
 
+        // 搜尋性能統計變數
+        let nodesEvaluated = 0;    // 總共評估過的盤面節點數
+
         // 防誤觸機制相關變數
         let resetConfirmState = false;
         let resetTimer = null;
@@ -308,10 +341,18 @@
         const modalWhiteScore = document.getElementById('modal-white-score');
         const btnModalRestart = document.getElementById('modal-restart');
 
-        const difficultyGroup = document.getElementById('difficulty-group');
+        // AI 相關控制項
+        const aiDepthSlider = document.getElementById('ai-depth-slider');
+        const aiDepthBadge = document.getElementById('ai-depth-badge');
         const timeLimitContainer = document.getElementById('time-limit-container');
         const timeLimitSlider = document.getElementById('time-limit-slider');
         const timeLimitValue = document.getElementById('time-limit-value');
+
+        // AI 數據即時看板
+        const statTime = document.getElementById('stat-time');
+        const statWinrate = document.getElementById('stat-winrate');
+        const statDepth = document.getElementById('stat-depth');
+        const statNodes = document.getElementById('stat-nodes');
 
         // 主題控制
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -349,29 +390,26 @@
             return cols[c] + (r + 1);
         }
 
-        // ==================== 難度與時間 UI 控制 ====================
+        // ==================== 強度滑桿 UI 處理 ====================
         
-        difficultyGroup.addEventListener('click', (e) => {
-            const btn = e.target.closest('.diff-btn');
-            if (!btn) return;
+        aiDepthSlider.addEventListener('input', (e) => {
+            const depth = parseInt(e.target.value);
+            let rating = "入門";
+            if (depth >= 3 && depth <= 4) rating = "業餘";
+            else if (depth >= 5 && depth <= 6) rating = "專家";
+            else if (depth >= 7 && depth <= 8) rating = "大師";
+            else if (depth >= 9) rating = "宗師級";
 
-            // 清除其他按鈕的選取樣式
-            difficultyGroup.querySelectorAll('.diff-btn').forEach(b => {
-                b.className = "diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500";
-            });
+            aiDepthBadge.innerText = `深度 ${depth} (${rating})`;
+            aiMaxDepth = depth;
 
-            // 啟用選取樣式
-            btn.className = "diff-btn py-2.5 rounded-lg border text-sm font-semibold transition-all border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20";
-            
-            aiMaxDepth = parseInt(btn.dataset.depth);
-
-            // 當強度大於等於 5 (困難/大師) 時，高亮提示或強制顯示最長思考時間控制
-            if (aiMaxDepth >= 5) {
+            // 當深度大於等於 5 時才啟用時間限制調節，防止過載
+            if (depth >= 5) {
                 timeLimitContainer.classList.remove('opacity-60');
-                timeLimitContainer.classList.add('ring-1', 'ring-emerald-500/30');
+                timeLimitSlider.disabled = false;
             } else {
                 timeLimitContainer.classList.add('opacity-60');
-                timeLimitContainer.classList.remove('ring-1', 'ring-emerald-500/30');
+                timeLimitSlider.disabled = true;
             }
         });
 
@@ -446,7 +484,7 @@
             resetConfirmState = false;
             clearTimeout(resetTimer);
             btnResetText.innerText = "重新開始";
-            btnReset.className = "flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 relative overflow-hidden";
+            btnReset.className = "flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 relative overflow-hidden text-sm";
         }
 
         // 遊戲結束 Modal 的重新開始按鈕
@@ -466,6 +504,12 @@
             }
             isAiThinking = false;
             lastMove = null; 
+
+            // 清空 AI 即時面板數據
+            statTime.innerText = "-";
+            statWinrate.innerText = "-";
+            statDepth.innerText = "-";
+            statNodes.innerText = "-";
 
             board = Array(8).fill(null).map(() => Array(8).fill(EMPTY));
             
@@ -600,20 +644,33 @@
             }
         }
 
+        // 電腦 AI 落子主程式 (整合計算效能即時統計)
         function runComputerTurn() {
             isAiThinking = true;
             statusPing.classList.remove('hidden');
 
             aiTimeoutId = setTimeout(() => {
-                // 利用漸進加深搜尋取得當前時間限制下的最佳策略步
-                const bestMove = getBestMoveUsingMinimax(board, computerColor, aiMaxDepth, aiMaxTimeMs);
+                const startTime = performance.now();
                 
+                // 呼叫 Iterative Deepening Minimax 決策並返回結構性結果
+                const result = getBestMoveWithStats(board, computerColor, aiMaxDepth, aiMaxTimeMs);
+                
+                const endTime = performance.now();
+                const durationMs = Math.round(endTime - startTime);
+
                 isAiThinking = false;
                 statusPing.classList.add('hidden');
 
-                if (bestMove) {
-                    executeMove(bestMove.r, bestMove.c, computerColor);
+                // 渲染計算面板統計數據
+                statTime.innerText = durationMs < 1000 ? `${durationMs} ms` : `${(durationMs / 1000).toFixed(2)} s`;
+                statWinrate.innerText = `${result.winrate.toFixed(1)}%`;
+                statDepth.innerText = `${result.depthReached} / ${aiMaxDepth}`;
+                statNodes.innerText = result.nodesEvaluated.toLocaleString();
+
+                if (result.bestMove) {
+                    executeMove(result.bestMove.r, result.bestMove.c, computerColor);
                 } else {
+                    // 防呆
                     const aiMoves = getValidMoves(board, computerColor);
                     if (aiMoves.length > 0) {
                         const randomMove = aiMoves[Math.floor(Math.random() * aiMoves.length)];
@@ -747,8 +804,12 @@
         }
 
         function showToast(message) {
+            // 清理可能重複的吐司
+            const prev = document.querySelectorAll('.toast-msg');
+            prev.forEach(t => t.remove());
+
             const toast = document.createElement('div');
-            toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white dark:bg-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-lg font-semibold text-sm transition-opacity duration-300 z-50 flex items-center gap-2 border border-gray-700 dark:border-gray-200";
+            toast.className = "toast-msg fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-lg font-semibold text-sm transition-opacity duration-300 z-50 flex items-center gap-2 border border-gray-700 dark:border-gray-200";
             toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-emerald-400"></i><span>${message}</span>`;
             document.body.appendChild(toast);
             lucide.createIcons();
@@ -761,10 +822,12 @@
             }, 2500);
         }
 
-        // ==================== Minimax 核心決策演算法 ====================
+        // ==================== Minimax 核心決策與統計演算法 ====================
 
         // 估值函數 (Evaluation Function)
         function evaluateBoard(tempBoard, aiColor) {
+            nodesEvaluated++; // 累加盤面狀態探索量
+            
             let score = 0;
             const player = -aiColor;
 
@@ -795,30 +858,44 @@
             return score;
         }
 
-        // 【時間截斷 + 漸進加深搜尋 (Iterative Deepening)】
-        function getBestMoveUsingMinimax(tempBoard, aiColor, maxDepth, maxTimeMs) {
+        // 將評估分轉換為大致勝率 (使用 sigmoid 邏輯平滑轉換至 1% ~ 99%)
+        function convertScoreToWinrate(score) {
+            // score = 0 時 winrate = 50%
+            // 由於黑白棋估值最高可達數百，我們設定 scaling factor 使得 score = 150 時勝率約為 73%
+            const winrate = 100 / (1 + Math.exp(-score / 300));
+            return Math.max(1.0, Math.min(99.0, winrate));
+        }
+
+        // 【時間截斷 + 漸進加深搜尋 (Iterative Deepening) + 統計記錄】
+        function getBestMoveWithStats(tempBoard, aiColor, maxDepth, maxTimeMs) {
             const startTime = Date.now();
             const deadline = startTime + maxTimeMs;
-            let bestMove = null;
+            
+            nodesEvaluated = 0; // 重置盤面節點計數器
+            
+            let bestMoveGlobal = null;
+            let bestScoreGlobal = 0;
+            let depthReached = 0;
 
             const validMoves = getValidMoves(tempBoard, aiColor);
-            if (validMoves.length === 0) return null;
+            if (validMoves.length === 0) {
+                return { bestMove: null, winrate: 50, depthReached: 0, nodesEvaluated: 0 };
+            }
 
-            // 預排序：角落位置權重高者優先計算，可顯著提升 Alpha-Beta 剪枝的效率
+            // 預排序
             validMoves.sort((a, b) => {
                 const weightA = POSITION_WEIGHTS[a.r][a.c];
                 const weightB = POSITION_WEIGHTS[b.r][b.c];
                 return weightB - weightA;
             });
 
-            // 漸進加深搜尋 (從深度 1 開始遞增算到最大深度)
+            // 漸進加深
             for (let d = 1; d <= maxDepth; d++) {
                 try {
                     let bestScoreForDepth = -Infinity;
                     let bestMoveForDepth = null;
 
                     for (const move of validMoves) {
-                        // 每次開始搜尋前檢測是否超時
                         if (Date.now() >= deadline) {
                             throw new Error("Timeout");
                         }
@@ -832,26 +909,40 @@
                         }
                     }
 
-                    // 順利算完目前深度的所有可能，更新成當前最優解
                     if (bestMoveForDepth) {
-                        bestMove = bestMoveForDepth;
+                        bestMoveGlobal = bestMoveForDepth;
+                        bestScoreGlobal = bestScoreForDepth;
+                        depthReached = d; // 成功算完第 d 層
                     }
                 } catch (error) {
                     if (error.message === "Timeout") {
-                        // 如果中斷直接跳出迴圈，採用前一深度完整算出的最優棋步
-                        break;
+                        break; // 發生超時，優雅彈出並回傳上一層完整算完的結果
                     } else {
                         throw error;
                     }
                 }
             }
 
-            return bestMove;
+            // 萬一第一層就超時（例如極端效能受限設備上），確保仍有棋步
+            if (!bestMoveGlobal && validMoves.length > 0) {
+                bestMoveGlobal = validMoves[0];
+                bestScoreGlobal = evaluateBoard(simulateMove(tempBoard, bestMoveGlobal.r, bestMoveGlobal.c, aiColor), aiColor);
+                depthReached = 1;
+            }
+
+            const winrate = convertScoreToWinrate(bestScoreGlobal);
+
+            return {
+                bestMove: bestMoveGlobal,
+                winrate: winrate,
+                depthReached: depthReached,
+                nodesEvaluated: nodesEvaluated
+            };
         }
 
-        // Minimax 核心遞迴與 Alpha-Beta 剪枝 (帶有 Time Limit 監聽)
+        // Minimax 核心遞迴與 Alpha-Beta 剪枝 (帶有時間限制偵測)
         function minimax(tempBoard, depth, alpha, beta, isMaximizing, aiColor, deadline) {
-            // 每層搜尋起點均快速檢查超時，以立刻回彈
+            // 每次遞迴開始前檢測超時
             if (Date.now() >= deadline) {
                 throw new Error("Timeout");
             }
