@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑白棋 (Othello)</title>
+    <!-- 使用 Tailwind CSS 進行快速排版與設計 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 定義棋盤與棋子的自訂樣式 */
+        :root {
+            --board-color: #0b8a4b; /* 經典黑白棋棋盤綠色 */
+            --board-border: #064d29;
+            --cell-border: #09723e;
+            --highlight-color: rgba(255, 255, 255, 0.2);
+            --valid-move-color: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation; /* 改善觸控體驗，防止雙擊放大 */
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 棋盤樣式 */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            background-color: var(--board-border);
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            aspect-ratio: 1 / 1;
+            width: 100%;
+        }
+
+        /* 單一格子的樣式 */
+        .cell {
+            background-color: var(--board-color);
+            border: 1px solid var(--cell-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .cell:hover {
+            background-color: #0c9c54;
+        }
+
+        /* 顯示合法步的提示點 */
+        .valid-move::after {
+            content: '';
+            width: 25%;
+            height: 25%;
+            background-color: var(--valid-move-color);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        /* 棋子的基礎樣式與翻轉動畫設定 */
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.4s ease-in-out, background-color 0.4s ease-in-out;
+            transform-style: preserve-3d; /* 讓子元素支援 3D 變換 */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 黑子樣式 */
+        .piece.black {
+            background-color: #1a1a1a;
+            /* 模擬一點立體感 */
+            background-image: radial-gradient(circle at 30% 30%, #444, #000);
+        }
+
+        /* 白子樣式 */
+        .piece.white {
+            background-color: #f0f0f0;
+            background-image: radial-gradient(circle at 30% 30%, #fff, #ccc);
+        }
+
+        /* 剛下棋子的動畫特效 */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .piece.new {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 狀態列樣式 */
+        .status-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .score-piece {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .score-piece.black { background-color: #1a1a1a; }
+        .score-piece.white { background-color: #f0f0f0; }
+
+        /* 提示目前誰的回合 */
+        .active-turn {
+            border-bottom: 3px solid #3b82f6; /* Tailwind blue-500 */
+            padding-bottom: 2px;
+        }
+
+        /* 訊息視窗樣式 */
+        #message-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #message-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="game-container">
+        <!-- 標題列 -->
+        <h1 class="text-3xl font-bold text-center mt-6 mb-2 text-gray-800">黑白棋</h1>
+        <p class="text-center text-sm text-gray-500 mb-6">玩家 (黑) vs 電腦 (白)</p>
+
+        <!-- 狀態面板：顯示分數和回合 -->
+        <div class="status-panel">
+            <div id="player-score" class="score-box active-turn transition-all duration-300">
+                <div class="score-piece black"></div>
+                <span>玩家: <span id="black-count">2</span></span>
+            </div>
+            
+            <div class="text-center">
+                <span id="turn-indicator" class="text-sm font-semibold bg-blue-100 text-blue-800 py-1 px-3 rounded-full">
+                    玩家回合
+                </span>
+            </div>
+
+            <div id="computer-score" class="score-box transition-all duration-300">
+                <span><span id="white-count">2</span> :電腦</span>
+                <div class="score-piece white"></div>
+            </div>
+        </div>
+
+        <!-- 遊戲棋盤 -->
+        <div id="board"></div>
+
+        <!-- 控制按鈕 -->
+        <div class="flex justify-center mt-8 space-x-4">
+            <button id="restart-btn" class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 font-medium">
+                重新開始
+            </button>
+            <button id="pass-btn" class="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 font-medium hidden">
+                Pass (跳過)
+            </button>
+        </div>
+    </div>
+
+    <!-- 訊息對話框 (用於顯示遊戲結束等訊息) -->
+    <div id="message-modal">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 transform transition-all scale-95 opacity-0" id="modal-content">
+            <h2 id="modal-title" class="text-2xl font-bold text-center mb-4 text-gray-800">遊戲結束</h2>
+            <p id="modal-message" class="text-center text-lg mb-6 text-gray-600">黑子獲勝！</p>
+            <div class="flex justify-center">
+                <button id="modal-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-colors font-medium">
+                    再玩一局
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 黑白棋遊戲邏輯
+         */
+        const BOARD_SIZE = 8;
+        const EMPTY = 0;
+        const BLACK = 1; // 玩家
+        const WHITE = 2; // 電腦
+
+        // 遊戲狀態變數
+        let board = [];
+        let currentPlayer = BLACK;
+        let isGameOver = false;
+        let isComputerThinking = false;
+        let blackCount = 2;
+        let whiteCount = 2;
+
+        // 定義8個方向 (上, 下, 左, 右, 左上, 右上, 左下, 右下)
+        const DIRECTIONS = [
+            [-1, 0], [1, 0], [0, -1], [0, 1],
+            [-1, -1], [-1, 1], [1, -1], [1, 1]
+        ];
+
+        // DOM 元素參考
+        const boardEl = document.getElementById('board');
+        const turnIndicatorEl = document.getElementById('turn-indicator');
+        const blackCountEl = document.getElementById('black-count');
+        const whiteCountEl = document.getElementById('white-count');
+        const playerScoreEl = document.getElementById('player-score');
+        const computerScoreEl = document.getElementById('computer-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const passBtn = document.getElementById('pass-btn');
+        
+        // Modal DOM 元素
+        const modal = document.getElementById('message-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalBtn = document.getElementById('modal-btn');
+
+        /**
+         * 初始化遊戲與棋盤
+         */
+        function initGame() {
+            board = [];
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                board.push(new Array(BOARD_SIZE).fill(EMPTY));
+            }
+
+            // 初始中央四顆棋子
+            board[3][3] = WHITE;
+            board[3][4] = BLACK;
+            board[4][3] = BLACK;
+            board[4][4] = WHITE;
+
+            currentPlayer = BLACK;
+            isGameOver = false;
+            isComputerThinking = false;
+            
+            updateScore();
+            renderBoard();
+            updateUI();
+            
+            // 隱藏 Pass 按鈕
+            passBtn.classList.add('hidden');
+        }
+
+        /**
+         * 渲染棋盤 UI
+         */
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            
+            const validMoves = getValidMoves(currentPlayer);
+            
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    // 綁定點擊事件
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+
+                    // 繪製棋子
+                    const pieceValue = board[row][col];
+                    if (pieceValue !== EMPTY) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${pieceValue === BLACK ? 'black' : 'white'}`;
+                        cell.appendChild(piece);
+                    } 
+                    // 如果是玩家回合，顯示合法步提示
+                    else if (currentPlayer === BLACK && !isComputerThinking) {
+                        const isValid = validMoves.some(m => m.row === row && m.col === col);
+                        if (isValid) {
+                            cell.classList.add('valid-move');
+                        }
+                    }
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        /**
+         * 處理玩家點擊棋盤
+         */
+        function handleCellClick(row, col) {
+            if (isGameOver || currentPlayer !== BLACK || isComputerThinking) return;
+
+            // 檢查是否為合法步
+            if (isValidMove(row, col, currentPlayer)) {
+                makeMove(row, col, currentPlayer);
+            }
+        }
+
+        /**
+         * 檢查在指定位置下棋是否合法
+         * @returns {boolean}
+         */
+        function isValidMove(row, col, player) {
+            if (board[row][col] !== EMPTY) return false;
+
+            const opponent = player === BLACK ? WHITE : BLACK;
+            let isValid = false;
+
+            // 檢查8個方向
+            for (let [dx, dy] of DIRECTIONS) {
+                let x = row + dx;
+                let y = col + dy;
+                let hasOpponentBetween = false;
+
+                // 往該方向一直找，直到超出邊界或遇到非對手棋子
+                while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === opponent) {
+                    hasOpponentBetween = true;
+                    x += dx;
+                    y += dy;
+                }
+
+                // 如果中間有對手棋子，且最後遇到的是自己的棋子，則此步合法
+                if (hasOpponentBetween && x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === player) {
+                    isValid = true;
+                    break; // 只要有一個方向可以翻轉就合法
+                }
+            }
+
+            return isValid;
+        }
+
+        /**
+         * 取得某玩家目前所有合法步的座標
+         * @returns {Array<{row: number, col: number}>}
+         */
+        function getValidMoves(player) {
+            const moves = [];
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (isValidMove(r, c, player)) {
+                        moves.push({ row: r, col: c });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        /**
+         * 執行下棋並翻轉對手棋子
+         */
+        function makeMove(row, col, player) {
+            const opponent = player === BLACK ? WHITE : BLACK;
+            let piecesToFlip = [];
+
+            // 找出需要翻轉的棋子
+            for (let [dx, dy] of DIRECTIONS) {
+                let x = row + dx;
+                let y = col + dy;
+                let tempFlipped = [];
+
+                while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === opponent) {
+                    tempFlipped.push({ r: x, c: y });
+                    x += dx;
+                    y += dy;
+                }
+
+                if (tempFlipped.length > 0 && x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === player) {
+                    piecesToFlip = piecesToFlip.concat(tempFlipped);
+                }
+            }
+
+            // 更新內部資料模型
+            board[row][col] = player;
+            piecesToFlip.forEach(p => {
+                board[p.r][p.c] = player;
+            });
+
+            // 更新分數與 UI
+            updateScore();
+            
+            // 局部更新 UI 產生動畫效果，而不是重新渲染整個棋盤
+            animateMove(row, col, player, piecesToFlip);
+
+            // 切換回合並檢查遊戲狀態
+            nextTurn();
+        }
+
+        /**
+         * 處理下棋與翻轉的動畫
+         */
+        function animateMove(newRow, newCol, player, piecesToFlip) {
+            // 放置新棋子
+            const newCellIndex = newRow * BOARD_SIZE + newCol;
+            const cellEl = boardEl.children[newCellIndex];
+            cellEl.classList.remove('valid-move');
+            
+            const newPiece = document.createElement('div');
+            newPiece.className = `piece ${player === BLACK ? 'black' : 'white'} new`;
+            cellEl.appendChild(newPiece);
+
+            // 翻轉棋子
+            piecesToFlip.forEach(p => {
+                const index = p.r * BOARD_SIZE + p.c;
+                const pCell = boardEl.children[index];
+                const pDiv = pCell.querySelector('.piece');
+                
+                if (pDiv) {
+                    // 改變 class 來觸發顏色變化
+                    pDiv.className = `piece ${player === BLACK ? 'black' : 'white'}`;
+                }
+            });
+            
+            // 移除其他格子的合法步提示
+            Array.from(boardEl.children).forEach(child => child.classList.remove('valid-move'));
+        }
+
+        /**
+         * 切換回合邏輯
+         */
+        function nextTurn() {
+            // 交換玩家
+            currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
+            
+            const validMoves = getValidMoves(currentPlayer);
+            
+            if (validMoves.length === 0) {
+                // 如果當前玩家無步可走
+                const opponentMoves = getValidMoves(currentPlayer === BLACK ? WHITE : BLACK);
+                
+                if (opponentMoves.length === 0) {
+                    // 雙方都無步可走，遊戲結束
+                    endGame();
+                } else {
+                    // 只有當前玩家無步可走，需被迫 Pass
+                    handlePass();
+                }
+            } else {
+                // 正常換位
+                updateUI();
+                
+                // 如果換到電腦，觸發 AI
+                if (currentPlayer === WHITE && !isGameOver) {
+                    isComputerThinking = true;
+                    setTimeout(computerMove, 600); // 延遲讓感覺比較自然
+                }
+            }
+        }
+
+        /**
+         * 處理 Pass (跳過回合)
+         */
+        function handlePass() {
+            let msg = currentPlayer === BLACK ? "玩家(黑)無步可走，換電腦！" : "電腦(白)無步可走，換玩家！";
+            
+            // 短暫顯示 Pass 訊息 (不使用 alert)
+            turnIndicatorEl.textContent = msg;
+            turnIndicatorEl.className = "text-sm font-semibold bg-yellow-100 text-yellow-800 py-1 px-3 rounded-full";
+            
+            if (currentPlayer === BLACK) {
+                // 如果是玩家被 Pass，顯示按鈕讓玩家確認
+                passBtn.classList.remove('hidden');
+                passBtn.onclick = () => {
+                    passBtn.classList.add('hidden');
+                    currentPlayer = WHITE;
+                    updateUI();
+                    isComputerThinking = true;
+                    setTimeout(computerMove, 600);
+                };
+            } else {
+                // 如果是電腦被 Pass，自動切回玩家
+                setTimeout(() => {
+                    currentPlayer = BLACK;
+                    renderBoard(); // 重新渲染以顯示合法步
+                    updateUI();
+                }, 1500);
+            }
+        }
+
+        /**
+         * 電腦 AI 邏輯 (貪婪算法 + 位置權重)
+         */
+        function computerMove() {
+            if (isGameOver) return;
+
+            const moves = getValidMoves(WHITE);
+            if (moves.length === 0) return; // 理論上不該發生，前面檢查過
+
+            let bestMove = null;
+            let maxScore = -Infinity;
+
+            // 簡單的位置權重矩陣 (角落地位最高，角落旁邊地位最低)
+            const weightMatrix = [
+                [ 100, -20,  10,   5,   5,  10, -20, 100],
+                [ -20, -50,  -2,  -2,  -2,  -2, -50, -20],
+                [  10,  -2,   1,   1,   1,   1,  -2,  10],
+                [   5,  -2,   1,   0,   0,   1,  -2,   5],
+                [   5,  -2,   1,   0,   0,   1,  -2,   5],
+                [  10,  -2,   1,   1,   1,   1,  -2,  10],
+                [ -20, -50,  -2,  -2,  -2,  -2, -50, -20],
+                [ 100, -20,  10,   5,   5,  10, -20, 100]
+            ];
+
+            // 尋找最佳步
+            for (let move of moves) {
+                // 計算這步可以翻轉多少棋子 (當作基礎分數)
+                let flipCount = simulateMoveAndCount(move.row, move.col, WHITE);
+                
+                // 綜合考量：位置權重 + 翻轉數量
+                let score = weightMatrix[move.row][move.col] + flipCount;
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMove = move;
+                } else if (score === maxScore) {
+                    // 分數相同時隨機選擇，增加變化性
+                    if (Math.random() > 0.5) {
+                        bestMove = move;
+                    }
+                }
+            }
+
+            if (bestMove) {
+                makeMove(bestMove.row, bestMove.col, WHITE);
+            }
+            
+            isComputerThinking = false;
+            // 如果換回玩家，重新渲染以顯示提示點
+            if (currentPlayer === BLACK && !isGameOver) {
+                renderBoard();
+            }
+        }
+
+        /**
+         * 模擬下棋並計算可翻轉數量 (不實際修改版面)
+         */
+        function simulateMoveAndCount(row, col, player) {
+            const opponent = player === BLACK ? WHITE : BLACK;
+            let flipCount = 0;
+
+            for (let [dx, dy] of DIRECTIONS) {
+                let x = row + dx;
+                let y = col + dy;
+                let tempCount = 0;
+
+                while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === opponent) {
+                    tempCount++;
+                    x += dx;
+                    y += dy;
+                }
+
+                if (tempCount > 0 && x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === player) {
+                    flipCount += tempCount;
+                }
+            }
+            return flipCount;
+        }
+
+        /**
+         * 更新記分板與 UI 狀態
+         */
+        function updateScore() {
+            blackCount = 0;
+            whiteCount = 0;
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c] === BLACK) blackCount++;
+                    else if (board[r][c] === WHITE) whiteCount++;
+                }
+            }
+            
+            blackCountEl.textContent = blackCount;
+            whiteCountEl.textContent = whiteCount;
+        }
+
+        function updateUI() {
+            if (isGameOver) return;
+
+            // 更新回合指示器
+            if (currentPlayer === BLACK) {
+                playerScoreEl.classList.add('active-turn');
+                computerScoreEl.classList.remove('active-turn');
+                turnIndicatorEl.textContent = "玩家 (黑) 回合";
+                turnIndicatorEl.className = "text-sm font-semibold bg-gray-200 text-gray-800 py-1 px-3 rounded-full";
+            } else {
+                computerScoreEl.classList.add('active-turn');
+                playerScoreEl.classList.remove('active-turn');
+                turnIndicatorEl.textContent = "電腦 (白) 思考中...";
+                turnIndicatorEl.className = "text-sm font-semibold bg-blue-100 text-blue-800 py-1 px-3 rounded-full";
+            }
+        }
+
+        /**
+         * 處理遊戲結束
+         */
+        function endGame() {
+            isGameOver = true;
+            turnIndicatorEl.textContent = "遊戲結束";
+            turnIndicatorEl.className = "text-sm font-semibold bg-red-100 text-red-800 py-1 px-3 rounded-full";
+            
+            playerScoreEl.classList.remove('active-turn');
+            computerScoreEl.classList.remove('active-turn');
+
+            let resultMsg = "";
+            let titleStr = "";
+            
+            if (blackCount > whiteCount) {
+                titleStr = "🎉 恭喜獲勝！";
+                resultMsg = `玩家 (黑) 以 ${blackCount} : ${whiteCount} 擊敗電腦！`;
+            } else if (whiteCount > blackCount) {
+                titleStr = "💻 電腦獲勝";
+                resultMsg = `電腦 (白) 以 ${whiteCount} : ${blackCount} 擊敗玩家。再試一次吧！`;
+            } else {
+                titleStr = "🤝 平手";
+                resultMsg = `雙方 ${blackCount} : ${whiteCount} 平分秋色！`;
+            }
+
+            showModal(titleStr, resultMsg);
+        }
+
+        /**
+         * 顯示訊息對話框
+         */
+        function showModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modal.classList.add('show');
+            
+            // 動畫效果
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        /**
+         * 隱藏訊息對話框
+         */
+        function hideModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 300);
+        }
+
+        // 綁定按鈕事件
+        restartBtn.addEventListener('click', () => {
+            hideModal();
+            initGame();
+        });
+        
+        modalBtn.addEventListener('click', () => {
+            hideModal();
+            initGame();
+        });
+
+        // 啟動遊戲
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
