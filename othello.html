@@ -63,33 +63,62 @@
     <main class="flex-grow flex flex-col items-center justify-center p-4">
         
         <!-- 遊戲初始化設定 (Overlay 選單) -->
-        <div id="setup-panel" class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-fade-in">
-            <h2 class="text-xl font-bold text-center mb-6">開始新遊戲</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+        <div id="setup-panel" class="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h2 class="text-xl font-bold text-center mb-4">開始新遊戲</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
                 黑白棋規則：黑子先行。雙方輪流在可將對手夾住的位置落子，被夾住的棋子將會翻轉為自己的顏色。直到雙方無棋可下時，棋子多者勝。
             </p>
             
-            <div class="space-y-4">
-                <label class="block text-sm font-medium text-center">請選擇您的陣營</label>
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- 選擇執黑 -->
-                    <button id="choose-black" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 hover:scale-105 transition-all">
-                        <div class="w-12 h-12 rounded-full bg-black border-2 border-gray-400 shadow-md mb-2 flex items-center justify-center">
-                            <span class="text-xs text-white font-bold">先手</span>
-                        </div>
-                        <span class="font-semibold">玩家執黑 (先手)</span>
-                    </button>
-                    <!-- 選擇執白 -->
-                    <button id="choose-white" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-all hover:scale-105">
-                        <div class="w-12 h-12 rounded-full bg-white border-2 border-gray-300 shadow-md mb-2 flex items-center justify-center">
-                            <span class="text-xs text-black font-bold">後手</span>
-                        </div>
-                        <span class="font-semibold">玩家執白 (後手)</span>
-                    </button>
+            <div class="space-y-6">
+                <!-- 1. 選擇陣營 -->
+                <div>
+                    <label class="block text-sm font-semibold text-center mb-3">步驟一：選擇您的陣營</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- 選擇執黑 -->
+                        <button id="choose-black" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 hover:scale-[1.02] transition-all">
+                            <div class="w-10 h-10 rounded-full bg-black border border-gray-500 shadow-md mb-2 flex items-center justify-center">
+                                <span class="text-[10px] text-white font-bold">先手</span>
+                            </div>
+                            <span class="text-sm font-semibold">玩家執黑 (先手)</span>
+                        </button>
+                        <!-- 選擇執白 -->
+                        <button id="choose-white" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-all hover:scale-[1.02]">
+                            <div class="w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md mb-2 flex items-center justify-center">
+                                <span class="text-[10px] text-black font-bold">後手</span>
+                            </div>
+                            <span class="text-sm font-semibold">玩家執白 (後手)</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="pt-4">
-                    <button id="start-game-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition duration-150 shadow-md shadow-emerald-600/20">
+                <!-- 2. 選擇 AI 強度 -->
+                <div>
+                    <label class="block text-sm font-semibold text-center mb-3">步驟二：選擇電腦強度</label>
+                    <div class="grid grid-cols-4 gap-2" id="difficulty-group">
+                        <button data-depth="2" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">簡單</button>
+                        <button data-depth="4" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 font-semibold">中等</button>
+                        <button data-depth="6" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">困難</button>
+                        <button data-depth="8" class="diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500">大師</button>
+                    </div>
+                </div>
+
+                <!-- 3. 最長思考時間設定 (如果深度 >= 5 就強制或建議設定) -->
+                <div id="time-limit-container" class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 transition-all">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-semibold flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                            <i data-lucide="timer" class="w-4 h-4 text-emerald-500"></i>
+                            AI 最長思考時間限制
+                        </label>
+                        <span id="time-limit-value" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">3 秒</span>
+                    </div>
+                    <input type="range" id="time-limit-slider" min="1" max="15" value="3" class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    <p class="text-[10px] text-gray-400 mt-2">
+                        💡 備註：使用漸進加深搜尋。在達到深度上限前，若計算超過此秒數，AI 會立刻終止運算並採用目前得出的最佳棋步，避免網頁停頓。
+                    </p>
+                </div>
+
+                <div class="pt-2">
+                    <button id="start-game-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl transition duration-150 shadow-md shadow-emerald-600/20 text-base">
                         進入對決
                     </button>
                 </div>
@@ -125,12 +154,31 @@
                 </div>
             </div>
 
-            <!-- 主棋盤容器 -->
-            <div class="w-full aspect-square bg-gray-300 dark:bg-gray-800 p-2 rounded-2xl shadow-2xl relative">
-                <!-- 棋盤格：8x8 經典奧賽羅棋盤 -->
-                <div id="board" class="w-full h-full bg-board-light dark:bg-board-dark grid grid-cols-8 grid-rows-8 gap-0.5 rounded-xl overflow-hidden border border-emerald-800 dark:border-emerald-950">
-                    <!-- 棋格會由 JS 動態產生 -->
+            <!-- 主棋盤容器 (含邊緣座標 label) -->
+            <div class="w-full aspect-square bg-gray-300 dark:bg-gray-800 p-3 rounded-2xl shadow-2xl flex flex-col justify-between">
+                
+                <!-- 棋盤包裝層：網格劃分出 A~H 與 1~8 座標 -->
+                <div class="w-full h-full grid grid-cols-[1.5rem_1fr] grid-rows-[1.5rem_1fr] gap-1">
+                    
+                    <!-- 1. 左上角空白處 -->
+                    <div class="flex items-center justify-center text-[11px] font-bold text-gray-400 dark:text-gray-500"></div>
+                    
+                    <!-- 2. 頂部 A ~ H 橫向座標 -->
+                    <div class="grid grid-cols-8 text-center items-center text-[12px] font-bold tracking-widest text-gray-500 dark:text-gray-400 select-none">
+                        <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+                    </div>
+                    
+                    <!-- 3. 左側 1 ~ 8 縱向座標 -->
+                    <div class="grid grid-rows-8 text-center items-center text-[12px] font-bold text-gray-500 dark:text-gray-400 select-none pr-1">
+                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+                    </div>
+
+                    <!-- 4. 8x8 經典奧賽羅棋盤 -->
+                    <div id="board" class="w-full h-full bg-board-light dark:bg-board-dark grid grid-cols-8 grid-rows-8 gap-0.5 rounded-xl overflow-hidden border border-emerald-800 dark:border-emerald-950">
+                        <!-- 棋格會由 JS 動態產生 -->
+                    </div>
                 </div>
+
             </div>
 
             <!-- 功能控制按鈕 -->
@@ -182,7 +230,7 @@
 
     <!-- 頁尾 -->
     <footer class="text-center py-4 text-xs text-gray-400 dark:text-gray-600">
-        黑白棋 AI 戰機版 &middot; 使用 Minimax 與 Alpha-Beta 剪枝演算法
+        黑白棋 AI 戰機版 &middot; 使用 Iterative Deepening Minimax 與 Alpha-Beta 剪枝
     </footer>
 
     <!-- 核心 JS 程式碼 -->
@@ -213,6 +261,10 @@
             [-20, -40,  -5,  -5,  -5,  -5, -40, -20],
             [120, -20,  20,   5,   5,  20, -20, 120]
         ];
+
+        // 遊戲與 AI 參數設定
+        let aiMaxDepth = 4;        // 預設深度（中等）
+        let aiMaxTimeMs = 3000;    // 預設最大思考時間（3秒）
 
         // 遊戲狀態變數
         let board = Array(8).fill(null).map(() => Array(8).fill(EMPTY));
@@ -256,6 +308,11 @@
         const modalWhiteScore = document.getElementById('modal-white-score');
         const btnModalRestart = document.getElementById('modal-restart');
 
+        const difficultyGroup = document.getElementById('difficulty-group');
+        const timeLimitContainer = document.getElementById('time-limit-container');
+        const timeLimitSlider = document.getElementById('time-limit-slider');
+        const timeLimitValue = document.getElementById('time-limit-value');
+
         // 主題控制
         const themeToggleBtn = document.getElementById('theme-toggle');
         const sunIcon = document.getElementById('theme-sun');
@@ -292,6 +349,38 @@
             return cols[c] + (r + 1);
         }
 
+        // ==================== 難度與時間 UI 控制 ====================
+        
+        difficultyGroup.addEventListener('click', (e) => {
+            const btn = e.target.closest('.diff-btn');
+            if (!btn) return;
+
+            // 清除其他按鈕的選取樣式
+            difficultyGroup.querySelectorAll('.diff-btn').forEach(b => {
+                b.className = "diff-btn py-2.5 rounded-lg border text-sm font-medium transition-all border-gray-200 dark:border-gray-700 hover:border-emerald-500";
+            });
+
+            // 啟用選取樣式
+            btn.className = "diff-btn py-2.5 rounded-lg border text-sm font-semibold transition-all border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20";
+            
+            aiMaxDepth = parseInt(btn.dataset.depth);
+
+            // 當強度大於等於 5 (困難/大師) 時，高亮提示或強制顯示最長思考時間控制
+            if (aiMaxDepth >= 5) {
+                timeLimitContainer.classList.remove('opacity-60');
+                timeLimitContainer.classList.add('ring-1', 'ring-emerald-500/30');
+            } else {
+                timeLimitContainer.classList.add('opacity-60');
+                timeLimitContainer.classList.remove('ring-1', 'ring-emerald-500/30');
+            }
+        });
+
+        timeLimitSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            timeLimitValue.innerText = `${val} 秒`;
+            aiMaxTimeMs = val * 1000;
+        });
+
         // ==================== 陣營選擇與遊戲開始流程 ====================
         
         btnChooseBlack.addEventListener('click', () => {
@@ -317,37 +406,30 @@
         // 返回選單按鈕 (回首頁選單)
         btnSwitchCamp.addEventListener('click', () => {
             if (confirm("確定要終止目前對局，並返回選單嗎？")) {
-                // 1. 徹底清除並終止任何背景運行的 AI 計時器，防止非同步 Bug
                 if (aiTimeoutId) {
                     clearTimeout(aiTimeoutId);
                     aiTimeoutId = null;
                 }
                 isAiThinking = false;
 
-                // 2. 切換 UI 面板
                 gamePanel.classList.add('hidden');
                 setupPanel.classList.remove('hidden');
-                
-                // 3. 重設重新開始按鈕樣式
                 cancelResetConfirm();
             }
         });
 
-        // 防誤觸的重新開始按鈕機制 (現在會引導回首頁重新選顏色)
+        // 防誤觸的重新開始按鈕機制
         btnReset.addEventListener('click', () => {
             if (!resetConfirmState) {
-                // 進入二次確認狀態
                 resetConfirmState = true;
-                btnResetText.innerText = "確定重新選擇顏色？";
+                btnResetText.innerText = "確定重新選擇強度與顏色？";
                 btnReset.classList.add('bg-amber-500', 'text-white', 'hover:bg-amber-600');
                 btnReset.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'dark:bg-gray-800', 'dark:hover:bg-gray-700');
 
-                // 3秒後自動恢復原本按鈕狀態
                 resetTimer = setTimeout(() => {
                     cancelResetConfirm();
                 }, 3000);
             } else {
-                // 二次點擊，中斷目前對戰並返回首頁選單重新選擇顏色
                 cancelResetConfirm();
                 if (aiTimeoutId) {
                     clearTimeout(aiTimeoutId);
@@ -370,7 +452,6 @@
         // 遊戲結束 Modal 的重新開始按鈕
         btnModalRestart.addEventListener('click', () => {
             gameoverModal.classList.add('hidden');
-            // 返回首頁選單讓玩家能重新自由選擇棋色
             gamePanel.classList.add('hidden');
             setupPanel.classList.remove('hidden');
         });
@@ -379,7 +460,6 @@
 
         // 遊戲初始化
         function initGame() {
-            // 安全防護：重設所有非同步計時器與狀態
             if (aiTimeoutId) {
                 clearTimeout(aiTimeoutId);
                 aiTimeoutId = null;
@@ -414,22 +494,18 @@
         function renderBoard() {
             boardEl.innerHTML = '';
             
-            // 找出當前玩家所有可行走的步
             validMoves = getValidMoves(board, currentPlayer);
 
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const cell = document.createElement('div');
-                    // 格子樣式
                     cell.className = "relative flex items-center justify-center border-[0.5px] border-emerald-900/30 dark:border-emerald-950/50 cursor-pointer select-none group";
                     cell.dataset.row = r;
                     cell.dataset.col = c;
 
-                    // 格子內的棋子渲染
                     const pieceValue = board[r][c];
                     if (pieceValue !== EMPTY) {
                         const piece = document.createElement('div');
-                        // 棋子外型與翻轉效果
                         piece.className = "piece w-[82%] h-[82%] rounded-full shadow-lg relative flex items-center justify-center transition-all duration-500 transform";
                         
                         if (pieceValue === BLACK) {
@@ -438,101 +514,78 @@
                             piece.classList.add('bg-gradient-to-br', 'from-zinc-50', 'to-zinc-200', 'border', 'border-zinc-300');
                         }
 
-                        // 如果此棋子是「最後落子點」，給予一個金黃色呼吸外環
+                        // 最後一步的高亮呼吸金環
                         if (lastMove && lastMove.r === r && lastMove.c === c) {
                             piece.classList.add('ring-4', 'ring-amber-500', 'dark:ring-amber-400', 'animate-pulse');
                         }
 
                         cell.appendChild(piece);
                     } else {
-                        // 判斷是否為當前玩家的可行子點
                         const isMoveValid = validMoves.some(m => m.r === r && m.c === c);
                         
-                        // 只在屬於「人類玩家」的回合且為合法步時顯示提示
                         if (isMoveValid && currentPlayer === playerColor && !isGameOver && !isAiThinking) {
                             const hint = document.createElement('div');
                             hint.className = `hint-dot w-3.5 h-3.5 rounded-full ${playerColor === BLACK ? 'bg-black/40 dark:bg-black/60' : 'bg-white/50 dark:bg-white/70'} hover:scale-125 transition-transform`;
                             cell.appendChild(hint);
                             
-                            // 滑鼠懸浮在提示點上顯示預期落子的微型透明棋子
                             const shadowPiece = document.createElement('div');
                             shadowPiece.className = `absolute w-[80%] h-[80%] rounded-full opacity-0 group-hover:opacity-20 transition-opacity ${playerColor === BLACK ? 'bg-black' : 'bg-white'}`;
                             cell.appendChild(shadowPiece);
                         }
                     }
 
-                    // 點擊事件：玩家落子
                     cell.addEventListener('click', () => handleCellClick(r, c));
                     boardEl.appendChild(cell);
                 }
             }
         }
 
-        // 當點擊棋盤格子
         function handleCellClick(r, c) {
-            // 如果不是人類玩家的回合、正在思考或遊戲結束，則不反應
             if (currentPlayer !== playerColor || isAiThinking || isGameOver) return;
 
-            // 檢查該點是否為合法步
             const move = validMoves.find(m => m.r === r && m.c === c);
             if (!move) return;
 
-            // 執行人類玩家落子
             executeMove(r, c, playerColor);
         }
 
-        // 執行落子與翻轉邏輯
         function executeMove(r, c, player) {
-            // 紀錄最後一次落子資訊
             lastMove = { r, c, player };
 
-            // 找出因為落在此點會被翻轉的棋子位置
             const flips = getFlippedPieces(board, r, c, player);
-            
-            // 落子
             board[r][c] = player;
             
-            // 更新 UI 前，先動態做個小延遲與翻轉動畫的加持
             flips.forEach(([fr, fc]) => {
                 board[fr][fc] = player;
             });
 
-            // 換手
             currentPlayer = -player;
 
-            // 更新畫面
             renderBoard();
             updateScores();
 
-            // 進入下一回合流程
             setTimeout(() => {
                 processTurn();
             }, 300);
         }
 
-        // 判斷當前局勢：判斷是否需要 Pass、是否遊戲結束、或是需要調用 AI
         function processTurn() {
             if (isGameOver) return;
 
-            // 取得當前玩家的所有合法步
             const currentValidMoves = getValidMoves(board, currentPlayer);
 
             if (currentValidMoves.length === 0) {
-                // 如果當前玩家不能下，那看另一位能不能下
                 const opponentValidMoves = getValidMoves(board, -currentPlayer);
                 
                 if (opponentValidMoves.length === 0) {
-                    // 雙方都沒地方可落子，遊戲終止
                     endGame();
                     return;
                 } else {
-                    // 只有當前玩家無子可落，Pass 給對手
                     const playerStr = currentPlayer === BLACK ? "黑棋" : "白棋";
                     showToast(`${playerStr} 無子可落，Pass 回合！`);
                     currentPlayer = -currentPlayer;
                     renderBoard();
                     
-                    // 繼續執行下回合
                     setTimeout(() => {
                         processTurn();
                     }, 800);
@@ -540,24 +593,20 @@
                 }
             }
 
-            // 更新當前狀態指示
             updateStatusText();
 
-            // 輪到電腦（AI）時
             if (currentPlayer === computerColor) {
                 runComputerTurn();
             }
         }
 
-        // 電腦 AI 落子主程式
         function runComputerTurn() {
             isAiThinking = true;
             statusPing.classList.remove('hidden');
 
-            // 使用 aiTimeoutId 記錄，以便隨時中斷
             aiTimeoutId = setTimeout(() => {
-                // 使用 Minimax 演算法搭配 Alpha-Beta 剪枝來獲取最佳策略步
-                const bestMove = getBestMoveUsingMinimax(board, computerColor, 5);
+                // 利用漸進加深搜尋取得當前時間限制下的最佳策略步
+                const bestMove = getBestMoveUsingMinimax(board, computerColor, aiMaxDepth, aiMaxTimeMs);
                 
                 isAiThinking = false;
                 statusPing.classList.add('hidden');
@@ -565,17 +614,15 @@
                 if (bestMove) {
                     executeMove(bestMove.r, bestMove.c, computerColor);
                 } else {
-                    // 防呆機制：若算法沒算出，採隨機合法步
                     const aiMoves = getValidMoves(board, computerColor);
                     if (aiMoves.length > 0) {
                         const randomMove = aiMoves[Math.floor(Math.random() * aiMoves.length)];
                         executeMove(randomMove.r, randomMove.c, computerColor);
                     }
                 }
-            }, 750);
+            }, 500);
         }
 
-        // 結束棋局
         function endGame() {
             isGameOver = true;
             
@@ -607,7 +654,6 @@
 
         // ==================== 計算輔助工具函數 ====================
 
-        // 統計當前棋子數量
         function countPieces(tempBoard) {
             let black = 0;
             let white = 0;
@@ -620,13 +666,11 @@
             return { black, white };
         }
 
-        // 更新記分板 UI
         function updateScores() {
             const counts = countPieces(board);
             scoreBlackEl.innerText = counts.black;
             scoreWhiteEl.innerText = counts.white;
 
-            // 動態加上目前回合的高亮邊框效果
             if (currentPlayer === BLACK) {
                 scoreBlackCard.classList.add('ring-2', 'ring-emerald-500', 'scale-105');
                 scoreWhiteCard.classList.remove('ring-2', 'ring-emerald-500', 'scale-105');
@@ -636,12 +680,11 @@
             }
         }
 
-        // 更新頂部狀態文案與最後一步位置提示
         function updateStatusText() {
             let lastMoveHint = "";
             if (lastMove) {
                 const playerStr = lastMove.player === playerColor ? "您" : "電腦";
-                lastMoveHint = `<br><span class="text-xs text-gray-400 font-normal">(${playerStr}最後落子於 ${getCoordinateNotation(lastMove.r, lastMove.c)})</span>`;
+                lastMoveHint = `<br><span class="text-xs text-gray-400 font-normal">(${playerStr}落子於 ${getCoordinateNotation(lastMove.r, lastMove.c)})</span>`;
             }
 
             if (currentPlayer === playerColor) {
@@ -651,7 +694,6 @@
             }
         }
 
-        // 取得所有合法步
         function getValidMoves(tempBoard, player) {
             const moves = [];
             for (let r = 0; r < 8; r++) {
@@ -667,7 +709,6 @@
             return moves;
         }
 
-        // 偵測並返回落子於 (row, col) 後會被翻轉的棋子坐標集合
         function getFlippedPieces(tempBoard, r, c, player) {
             const flips = [];
             const opponent = -player;
@@ -677,14 +718,12 @@
                 let currC = c + dc;
                 const path = [];
 
-                // 往該方向搜索對手棋子
                 while (currR >= 0 && currR < 8 && currC >= 0 && currC < 8 && tempBoard[currR][currC] === opponent) {
                     path.push([currR, currC]);
                     currR += dr;
                     currC += dc;
                 }
 
-                // 搜索結束時，若遇到自己顏色的棋子，代表中間對手的棋子皆會被夾擊翻轉
                 if (currR >= 0 && currR < 8 && currC >= 0 && currC < 8 && tempBoard[currR][currC] === player) {
                     flips.push(...path);
                 }
@@ -693,12 +732,10 @@
             return flips;
         }
 
-        // 複製一份棋盤結構，供演算法模擬使用
         function cloneBoard(src) {
             return src.map(row => [...row]);
         }
 
-        // 模擬落子
         function simulateMove(tempBoard, r, c, player) {
             const newBoard = cloneBoard(tempBoard);
             const flips = getFlippedPieces(newBoard, r, c, player);
@@ -709,7 +746,6 @@
             return newBoard;
         }
 
-        // 自訂簡易彈出通知 (非 Alert)
         function showToast(message) {
             const toast = document.createElement('div');
             toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white dark:bg-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-lg font-semibold text-sm transition-opacity duration-300 z-50 flex items-center gap-2 border border-gray-700 dark:border-gray-200";
@@ -732,7 +768,6 @@
             let score = 0;
             const player = -aiColor;
 
-            // 1. 位置權重加成
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     if (tempBoard[r][c] === aiColor) {
@@ -743,16 +778,9 @@
                 }
             }
 
-            // 2. 數量優勢加成 (在遊戲後段特別有用)
             const count = countPieces(tempBoard);
             const totalPieces = count.black + count.white;
-            let countDiff = 0;
-
-            if (aiColor === BLACK) {
-                countDiff = count.black - count.white;
-            } else {
-                countDiff = count.white - count.black;
-            }
+            let countDiff = (aiColor === BLACK) ? (count.black - count.white) : (count.white - count.black);
 
             if (totalPieces > 48) {
                 score += countDiff * 15;
@@ -760,7 +788,6 @@
                 score += countDiff * 2;
             }
 
-            // 3. 行動量 (Mobility) 的加成
             const aiValidMoves = getValidMoves(tempBoard, aiColor).length;
             const playerValidMoves = getValidMoves(tempBoard, player).length;
             score += (aiValidMoves - playerValidMoves) * 10;
@@ -768,38 +795,68 @@
             return score;
         }
 
-        // 取得最佳步 (外層呼叫)
-        function getBestMoveUsingMinimax(tempBoard, aiColor, depth) {
-            let bestScore = -Infinity;
+        // 【時間截斷 + 漸進加深搜尋 (Iterative Deepening)】
+        function getBestMoveUsingMinimax(tempBoard, aiColor, maxDepth, maxTimeMs) {
+            const startTime = Date.now();
+            const deadline = startTime + maxTimeMs;
             let bestMove = null;
-            const validMoves = getValidMoves(tempBoard, aiColor);
 
+            const validMoves = getValidMoves(tempBoard, aiColor);
             if (validMoves.length === 0) return null;
 
-            // 排序優化：角落優先，提高 Alpha-Beta 剪枝效率
+            // 預排序：角落位置權重高者優先計算，可顯著提升 Alpha-Beta 剪枝的效率
             validMoves.sort((a, b) => {
                 const weightA = POSITION_WEIGHTS[a.r][a.c];
                 const weightB = POSITION_WEIGHTS[b.r][b.c];
                 return weightB - weightA;
             });
 
-            for (const move of validMoves) {
-                const nextBoardState = simulateMove(tempBoard, move.r, move.c, aiColor);
-                const score = minimax(nextBoardState, depth - 1, -Infinity, Infinity, false, aiColor);
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = move;
+            // 漸進加深搜尋 (從深度 1 開始遞增算到最大深度)
+            for (let d = 1; d <= maxDepth; d++) {
+                try {
+                    let bestScoreForDepth = -Infinity;
+                    let bestMoveForDepth = null;
+
+                    for (const move of validMoves) {
+                        // 每次開始搜尋前檢測是否超時
+                        if (Date.now() >= deadline) {
+                            throw new Error("Timeout");
+                        }
+
+                        const nextBoardState = simulateMove(tempBoard, move.r, move.c, aiColor);
+                        const score = minimax(nextBoardState, d - 1, -Infinity, Infinity, false, aiColor, deadline);
+                        
+                        if (score > bestScoreForDepth) {
+                            bestScoreForDepth = score;
+                            bestMoveForDepth = move;
+                        }
+                    }
+
+                    // 順利算完目前深度的所有可能，更新成當前最優解
+                    if (bestMoveForDepth) {
+                        bestMove = bestMoveForDepth;
+                    }
+                } catch (error) {
+                    if (error.message === "Timeout") {
+                        // 如果中斷直接跳出迴圈，採用前一深度完整算出的最優棋步
+                        break;
+                    } else {
+                        throw error;
+                    }
                 }
             }
 
             return bestMove;
         }
 
-        // Minimax 核心遞迴函數與 Alpha-Beta 剪枝
-        function minimax(tempBoard, depth, alpha, beta, isMaximizing, aiColor) {
-            const opponentColor = -aiColor;
+        // Minimax 核心遞迴與 Alpha-Beta 剪枝 (帶有 Time Limit 監聽)
+        function minimax(tempBoard, depth, alpha, beta, isMaximizing, aiColor, deadline) {
+            // 每層搜尋起點均快速檢查超時，以立刻回彈
+            if (Date.now() >= deadline) {
+                throw new Error("Timeout");
+            }
 
+            const opponentColor = -aiColor;
             const aiMoves = getValidMoves(tempBoard, aiColor);
             const opponentMoves = getValidMoves(tempBoard, opponentColor);
 
@@ -808,17 +865,17 @@
             }
 
             if (isMaximizing && aiMoves.length === 0) {
-                return minimax(tempBoard, depth - 1, alpha, beta, false, aiColor);
+                return minimax(tempBoard, depth - 1, alpha, beta, false, aiColor, deadline);
             }
             if (!isMaximizing && opponentMoves.length === 0) {
-                return minimax(tempBoard, depth - 1, alpha, beta, true, aiColor);
+                return minimax(tempBoard, depth - 1, alpha, beta, true, aiColor, deadline);
             }
 
             if (isMaximizing) {
                 let maxEval = -Infinity;
                 for (const move of aiMoves) {
                     const nextBoard = simulateMove(tempBoard, move.r, move.c, aiColor);
-                    const evalScore = minimax(nextBoard, depth - 1, alpha, beta, false, aiColor);
+                    const evalScore = minimax(nextBoard, depth - 1, alpha, beta, false, aiColor, deadline);
                     maxEval = Math.max(maxEval, evalScore);
                     alpha = Math.max(alpha, evalScore);
                     if (beta <= alpha) {
@@ -830,7 +887,7 @@
                 let minEval = Infinity;
                 for (const move of opponentMoves) {
                     const nextBoard = simulateMove(tempBoard, move.r, move.c, opponentColor);
-                    const evalScore = minimax(nextBoard, depth - 1, alpha, beta, true, aiColor);
+                    const evalScore = minimax(nextBoard, depth - 1, alpha, beta, true, aiColor, deadline);
                     minEval = Math.min(minEval, evalScore);
                     beta = Math.min(beta, evalScore);
                     if (beta <= alpha) {
